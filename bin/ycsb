@@ -103,6 +103,7 @@ DATABASES = {
     "solr7"        : "site.ycsb.db.solr7.SolrClient",
     "tarantool"    : "site.ycsb.db.TarantoolClient",
     "tablestore"   : "site.ycsb.db.tablestore.TableStoreClient",
+    "witnesskvs"   : "site.ycsb.db.witnesskvs.WitnessKvsClient",
     "zookeeper"    : "site.ycsb.db.zookeeper.ZKClient"
 }
 
@@ -212,11 +213,14 @@ def get_classpath_from_maven(module):
     try:
         debug("Running 'mvn -pl site.ycsb:" + module + " -am package -DskipTests "
               "dependency:build-classpath -DincludeScope=compile -Dmdep.outputFilterFile=true'")
-        mvn_output = check_output(["mvn", "-pl", "site.ycsb:" + module,
-                                   "-am", "package", "-DskipTests",
-                                   "dependency:build-classpath",
-                                   "-DincludeScope=compile",
-                                   "-Dmdep.outputFilterFile=true"])
+        args = ["mvn", "-pl", "site.ycsb:" + module,
+                "-am", "package", "-DskipTests",
+                "dependency:build-classpath",
+                "-DincludeScope=compile",
+                "-Dmdep.outputFilterFile=true"]
+        if os.environ.get("witnesskvpath"):
+            args.append("-Dwitnesskvpath=%s" % os.environ.get("witnesskvpath"))
+        mvn_output = check_output(args)
         # the above outputs a "classpath=/path/tojar:/path/to/other/jar" for each module
         # the last module will be the datastore binding
         line = [x for x in mvn_output.splitlines() if x.startswith("classpath=")][-1:]
